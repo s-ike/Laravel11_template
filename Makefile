@@ -4,6 +4,31 @@ WEB_CMD 	:= ${DOCKER_CMD} exec web
 MYSQL_CMD 	:= ${DOCKER_CMD} exec db
 ENV_FILE	:= ./.env
 
+# 引数なしの`make`のみで実行 Laravelの.envがあれば`make up`、なければ`make init`
+.PHONY: default
+default:
+	@if [ -e './src/.env' ]; then \
+	make up; \
+	else \
+	make init; \
+	fi
+
+.PHONY:	init
+init: ## 初期処理を行います。開発環境の作成を行います。
+	git config core.ignorecase false
+	cp src/.env.example src/.env
+	mkdir -p ./data/db
+	mkdir -p ./data/log/nginx
+	mkdir -p ./data/log/mysql
+	set -a && . ${ENV_FILE} && set +a && mkdir -p ./data/log/$${APP_NAME}
+	${DOCKER_CMD} build
+	@make up
+	${APP_CMD} composer install
+	${APP_CMD} php artisan key:generate
+	${APP_CMD} php artisan storage:link
+	${APP_CMD} chmod -R 777 storage bootstrap/cache
+	@make fresh
+
 .PHONY: up
 up: ## 起動します。
 	${DOCKER_CMD} up -d
@@ -26,6 +51,14 @@ app: ## appコンテナに入ります。
 .PHONY:	web
 web: ## webコンテナに入ります。
 	${WEB_CMD} /bin/bash
+
+.PHONY:	fresh
+fresh: ## データベースをリセットします。
+	${APP_CMD} php artisan migrate:fresh --seed
+
+.PHONY:	refresh
+refresh: ## データベースをrefreshによりリセットします。
+	${APP_CMD} php artisan migrate:refresh --seed
 
 .PHONY:	info
 info: ## プロジェクト内容を表示します。
