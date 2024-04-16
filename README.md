@@ -14,7 +14,8 @@ Build a simple laravel development environment with docker-compose. macOS(M1 or 
 
 1. Click [Use this template](https://github.com/s-ike/Laravel11_template/generate)
 2. Git clone & change directory
-3. Execute the following command
+3. Edit ./src/.env.example for your environment
+4. Execute the following command
 
 ```bash
 $ make

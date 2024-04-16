@@ -16,7 +16,9 @@ default:
 .PHONY:	init
 init: ## 初期処理を行います。開発環境の作成を行います。
 	git config core.ignorecase false
+	cp .env.example ${ENV_FILE}
 	cp src/.env.example src/.env
+	cat src/.env >> ${ENV_FILE}
 	mkdir -p ./data/db
 	mkdir -p ./data/log/nginx
 	mkdir -p ./data/log/mysql

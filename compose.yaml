@@ -10,7 +10,7 @@ services:
         source: ${DOCKER_PATH}/php/php.ini
         target: /usr/local/etc/php/php.ini
     environment:
-      - TZ=${TZ:-Asia/Tokyo}
+      - TZ=${APP_TIMEZONE:-Asia/Tokyo}
     working_dir: /usr/local/src/${APP_NAME}/src
 
   web:
@@ -49,4 +49,4 @@ services:
     environment:
       - MYSQL_DATABASE=${DB_DATABASE}
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - TZ=${TZ:-Asia/Tokyo}
+      - TZ=${APP_TIMEZONE:-Asia/Tokyo}
