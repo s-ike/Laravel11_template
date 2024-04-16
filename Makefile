@@ -1,7 +1,7 @@
 DOCKER_CMD 	:= docker compose -f compose.yaml
 APP_CMD 	:= ${DOCKER_CMD} exec app
 WEB_CMD 	:= ${DOCKER_CMD} exec web
-MYSQL_CMD 	:= ${DOCKER_CMD} exec db
+DB_CMD 		:= ${DOCKER_CMD} exec db
 ENV_FILE	:= ./.env
 
 # 引数なしの`make`のみで実行 Laravelの.envがあれば`make up`、なければ`make init`
@@ -29,6 +29,16 @@ init: ## 初期処理を行います。開発環境の作成を行います。
 	${APP_CMD} chmod -R 777 storage bootstrap/cache
 	@make fresh
 
+.PHONY: cache
+cache: ## Laravelのキャッシュを作成します。
+	${APP_CMD} composer dump-autoload -o
+	${APP_CMD} php artisan optimize
+
+.PHONY: clear
+clear: ## Laravelのキャッシュクリアを実行します。
+	${APP_CMD} composer clear-cache
+	${APP_CMD} php artisan optimize:clear
+
 .PHONY: up
 up: ## 起動します。
 	${DOCKER_CMD} up -d
@@ -44,6 +54,13 @@ d: down ## 停止します（downのエイリアス）。
 ps: ## docker-compose ps
 	${DOCKER_CMD} ps
 
+.PHONY:	destroy
+destroy: ## コンテナ、イメージ、ボリューム、ネットワークを削除します。
+	@read -p "Are you sure? [y,N]:" ans; \
+	if [ "$$ans" = y ]; then  \
+	${DOCKER_CMD} down --rmi all --volumes --remove-orphans; \
+	fi
+
 .PHONY:	app
 app: ## appコンテナに入ります。
 	${APP_CMD} /bin/bash
@@ -52,6 +69,22 @@ app: ## appコンテナに入ります。
 web: ## webコンテナに入ります。
 	${WEB_CMD} /bin/bash
 
+.PHONY:	db
+db: ## dbコンテナに入ります。
+	${DB_CMD} /bin/bash
+
+.PHONY:	sql
+sql: ## dbコンテナのデータベースに入ります。
+	set -a && . ${ENV_FILE} && set +a && ${DB_CMD} mysql -h 127.0.0.1 -u $${DB_USERNAME} -p$${DB_PASSWORD} $${DB_DATABASE}
+
+.PHONY:	migrate
+migrate: ## データベースの更新を行います。
+	${APP_CMD} php artisan migrate
+
+.PHONY:	rollback
+rollback: ## データベースのロールバックを行います。
+	${APP_CMD} php artisan migrate:rollback
+
 .PHONY:	fresh
 fresh: ## データベースをリセットします。
 	${APP_CMD} php artisan migrate:fresh --seed
@@ -59,6 +92,18 @@ fresh: ## データベースをリセットします。
 .PHONY:	refresh
 refresh: ## データベースをrefreshによりリセットします。
 	${APP_CMD} php artisan migrate:refresh --seed
+
+.PHONY:	seed
+seed: ## データベースへシードを実行します。
+	${APP_CMD} php artisan db:seed
+
+.PHONY:	tinker
+tinker: ## tinkerを実行します。
+	${APP_CMD} php artisan tinker
+
+.PHONY:	install
+install: ## composer install.
+	${APP_CMD} composer install
 
 .PHONY:	info
 info: ## プロジェクト内容を表示します。

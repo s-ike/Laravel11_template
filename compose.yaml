@@ -9,12 +9,17 @@ services:
       - type: bind
         source: ${DOCKER_PATH}/php/php.ini
         target: /usr/local/etc/php/php.ini
+    environment:
+      - TZ=${TZ:-Asia/Tokyo}
     working_dir: /usr/local/src/${APP_NAME}/src
 
   web:
     image: nginx:1.25
     ports:
-      - ${WEB_PORT}:80
+      - target: 80
+        published: ${WEB_PORT:-80}
+        protocol: tcp
+        mode: host
     volumes:
       - type: bind
         source: ${APP_PATH}
@@ -23,3 +28,25 @@ services:
         source: ${DOCKER_PATH}/nginx/default.conf
         target: /etc/nginx/conf.d/default.conf
     working_dir: /usr/local/src/${APP_NAME}/src
+
+  db:
+    image: mysql:8.0
+    ports:
+      - target: 3306
+        published: ${DB_PORT:-3306}
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: ${DATA_PATH}/db
+        target: /var/lib/mysql
+      - type: bind
+        source: ${DATA_PATH}/log/mysql
+        target: /var/log/mysql
+      - type: bind
+        source: ${DOCKER_PATH}/mysql/my.cnf
+        target: /etc/mysql/conf.d/my.cnf
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - TZ=${TZ:-Asia/Tokyo}
